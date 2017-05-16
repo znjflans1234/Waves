@@ -110,6 +110,10 @@ class Node (config: Config, val nodeInfo: NodeInfo, client: AsyncHttpClient, tim
 
   def status: Future[Status] = get("/node/status").as[Status]
 
+  def info: Future[DebugInfo] = get("/debug/info").as[DebugInfo]
+
+  def waitForDebugInfoAt(height: Long): Future[DebugInfo] = waitFor[DebugInfo](get("/debug/info").as[DebugInfo], _.stateHeight >= height, 1.second)
+
   def balance(address: String): Future[Balance] = get(s"/addresses/balance/$address").as[Balance]
 
   def waitForTransaction(txId: String): Future[Transaction] = waitFor[Option[Transaction]](transactionInfo(txId).transform {
@@ -126,6 +130,9 @@ class Node (config: Config, val nodeInfo: NodeInfo, client: AsyncHttpClient, tim
 
   def transfer(sourceAddress: String, recipient: String, amount: Long, fee: Long, assetId: Option[String] = None): Future[Transaction] =
     postJson("/assets/transfer", TransferRequest(assetId, None, amount, fee, sourceAddress, None, recipient)).as[Transaction]
+
+  def rollback(height: Long): Future[Unit] =
+    post("/debug/rollback", height.toString).map(_ => ())
 
   def payment(sourceAddress: String, recipient: String, amount: Long, fee: Long): Future[String] =
     postJson("/waves/payment", PaymentRequest(amount, fee, sourceAddress, recipient)).as[JsValue].map(v => (v \ "signature").as[String])
@@ -259,6 +266,10 @@ object Node extends ScorexLogging {
   case class Transaction(`type`: Int, id: String, fee: Long, timestamp: Long)
 
   implicit val transactionFormat: Format[Transaction] = Json.format
+
+  case class DebugInfo(stateHeight: Long, stateHash: Long)
+
+  implicit val debugInfoFormat: Format[DebugInfo] = Json.format
 
   case class Block(signature: String, height: Long, timestamp: Long, generator: String, transactions: Seq[Transaction],
                    fee: Long)
