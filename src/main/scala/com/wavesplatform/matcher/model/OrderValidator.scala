@@ -38,6 +38,10 @@ trait OrderValidator {
     }
   }
 
+  def getTradableBalance(acc: AssetAcc): Long = {
+    storedState.tradableAssetBalance(acc) - orderHistory.getOpenVolume(acc)
+  }
+
   def validateNewOrder(order: Order): Either[CustomValidationError, Order] = {
     //(openOrdersCount.getOrElse(order.matcherPublicKey.address, 0) <= settings.maxOpenOrders) :|
     //  s"Open orders count limit exceeded (Max = ${settings.maxOpenOrders})" &&

@@ -11,6 +11,7 @@ class ExchangeTransactionSpecification extends PropSpec with PropertyChecks with
   property("ExchangeTransaction transaction serialization roundtrip") {
     forAll { x: (ExchangeTransaction, PrivateKeyAccount) =>
       val (om, matcher) = x
+      println(om.bytes.length)
       val recovered = ExchangeTransaction.parseBytes(om.bytes).get
       om.id shouldBe recovered.id
       om.buyOrder.id shouldBe recovered.buyOrder.id
