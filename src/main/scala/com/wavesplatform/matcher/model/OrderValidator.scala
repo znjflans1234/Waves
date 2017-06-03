@@ -47,11 +47,11 @@ trait OrderValidator {
     //  s"Open orders count limit exceeded (Max = ${settings.maxOpenOrders})" &&
     val v =
       (order.matcherPublicKey == matcherPubKey) :| "Incorrect matcher public key" &&
-      LimitOrder.validateIntegerAmount(storedState, LimitOrder(order)) &&
-      order.isValid(NTP.correctedTime()) &&
-      (order.matcherFee >= settings.minOrderFee) :| s"Order matcherFee should be >= ${settings.minOrderFee}" &&
-      (orderHistory.getOrderStatus(order.idStr) == LimitOrder.NotFound) :| "Order is already accepted" &&
-      isBalanceWithOpenOrdersEnough(order)
+        order.isValid(NTP.correctedTime()) &&
+        LimitOrder.validateIntegerAmount(storedState, LimitOrder(order)) &&
+        (order.matcherFee >= settings.minOrderFee) :| s"Order matcherFee should be >= ${settings.minOrderFee}" &&
+        (orderHistory.getOrderStatus(order.idStr) == LimitOrder.NotFound) :| "Order is already accepted" &&
+        isBalanceWithOpenOrdersEnough(order)
     if (!v) {
       Left(CustomValidationError(v.messages()))
     } else {
