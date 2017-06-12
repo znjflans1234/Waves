@@ -6,7 +6,7 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.wavesplatform.matcher.MatcherSettings
 import com.wavesplatform.matcher.api.{MatcherResponse, StatusCodeMatcherResponse}
 import com.wavesplatform.matcher.market.OrderBookActor.{DeleteOrderBookRequest, GetOrderBookResponse, OrderBookRequest}
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json._
 import scorex.crypto.encode.Base58
 import scorex.transaction.assets.IssueTransaction
 import scorex.transaction.assets.exchange.Validation.booleanOperators
@@ -32,7 +32,8 @@ class MatcherActor(orderHistory: ActorRef, storedState: StoredState, wallet: Wal
     def getAssetName(asset: Option[AssetId]) = asset.map(storedState.assetsExtension.getAssetName).getOrElse(AssetPair.WavesName)
 
     openMarkets += MarketData(pair, getAssetName(pair.amountAsset), getAssetName(pair.priceAsset), NTP.correctedTime(),
-        pair.amountAsset.flatMap(storedState.getIssueTransaction), pair.priceAsset.flatMap(storedState.getIssueTransaction))
+        pair.amountAsset.flatMap(storedState.getIssueTransaction).map(t => AssetInfo(t.decimals)),
+        pair.priceAsset.flatMap(storedState.getIssueTransaction).map(t => AssetInfo(t.decimals)))
     tradedPairs += pair
 
     context.actorOf(OrderBookActor.props(pair, orderHistory, storedState, settings, wallet, transactionModule),
@@ -158,10 +159,10 @@ object MatcherActor {
     def getMarketsJs: JsValue = JsArray(markets.map(m => Json.obj(
       "amountAsset" -> m.pair.amountAssetStr,
       "amountAssetName" -> m.amountAssetName,
-      "amountAssetInfo" -> m.amountAssetInfo.map(_.json),
+      "amountAssetInfo" -> m.amountAssetInfo,
       "priceAsset" -> m.pair.priceAssetStr,
       "priceAssetName" -> m.priceAssetName,
-      "priceAssetInfo" -> m.priceAssetinfo.map(_.json),
+      "priceAssetInfo" -> m.priceAssetinfo,
       "created" -> m.created
     ))
     )
@@ -174,7 +175,10 @@ object MatcherActor {
     def code: StatusCode = StatusCodes.OK
   }
 
+  case class AssetInfo(decimals: Int)
+  implicit val assetInfoFormat: Format[AssetInfo] = Json.format[AssetInfo]
+
   case class MarketData(pair: AssetPair, amountAssetName: String, priceAssetName: String, created: Long,
-                        amountAssetInfo: Option[IssueTransaction], priceAssetinfo: Option[IssueTransaction])
+                        amountAssetInfo: Option[AssetInfo], priceAssetinfo: Option[AssetInfo])
 
 }
