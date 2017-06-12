@@ -36,6 +36,7 @@ class MatcherSettingsSpecification extends FlatSpec with Matchers {
         |    ]
         |    max-timestamp-diff = 3h
         |    is-migrate-to-new-order-history-storage = no
+        |    blacklisted-assets: []
         |  }
         |}
       """.stripMargin).resolve()
