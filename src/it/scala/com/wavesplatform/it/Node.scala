@@ -168,9 +168,6 @@ class Node (config: Config, val nodeInfo: NodeInfo, client: AsyncHttpClient, tim
   def createAlias(targetAddress: String, alias: String, fee: Long): Future[Transaction] =
     postJson("/alias/create", CreateAliasRequest(targetAddress, alias, fee)).as[Transaction]
 
-  def rollback(to: Long): Future[Unit] =
-    post("/debug/rollback", to.toString).map(_ => ())
-
   def waitFor[A](f: => Future[A], cond: A => Boolean, retryInterval: FiniteDuration): Future[A] =
     timer.retryUntil(f, cond, retryInterval)
 
